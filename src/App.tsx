@@ -39,6 +39,8 @@ function App() {
 
   const[clienteModificado, setClienteModificado] = useState<Cliente | null>(null)
 
+  const[clienteABorrar,setClienteABorrar]= useState<Cliente | null>(null);
+
   const totalDeuda  = listaClientes.reduce((total, cliente)  => {
     return total  + Number(cliente.saldo)
   }, 0 )
@@ -275,18 +277,16 @@ function App() {
   return (
     <>
     <Toaster richColors position="top-right" />
-
-  {/* --- DASHBOARD CARD --- */}
+<div className="min-h-screen w-full bg-slate-950 bg-[radial-gradient(circle_farthest-side_at_var(--x,50%)_var(--y,50%),#334155_0%,#020617_100%)] py-10">
+  
   <div className="max-w-xl mx-auto mb-10">
     <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
       
-      {/* Encabezado con degradado */}
      <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-6 flex justify-between items-center">
         <h2 className="text-white text-lg font-bold opacity-90">
           💰 Finanzas del Negocio
         </h2>
         
-        {/* EL BOTÓN DE LOGOUT */}
         <button 
           onClick={cerrarSesion}
           className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold transition text-sm shadow-md active:scale-95"
@@ -296,7 +296,6 @@ function App() {
         </button>
       </div>
 
-      {/* Cuerpo de la tarjeta */}
       <div className="p-8 flex justify-between items-center">
         <div>
           <p className="text-slate-400 text-sm font-semibold uppercase tracking-wider">
@@ -307,7 +306,6 @@ function App() {
           </p>
         </div>
 
-        {/* Burbuja de clientes */}
         <div className="text-center bg-blue-50 px-6 py-3 rounded-xl border border-blue-100">
           <span className="block text-2xl font-bold text-blue-600">
             {listaClientes.length}
@@ -319,14 +317,13 @@ function App() {
       </div>
     </div>
   </div>
-          {/* --- FORMULARIO DE AGREGAR --- */}
   <div className="max-w-xl mx-auto mb-10 flex gap-4">
     <input 
       type="text"
       value={nombreInput}
       onChange={(e) => setNombreInput(e.target.value)}
       placeholder='Nombre del nuevo deudor...' 
-      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
+      className="text-white w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
     />
     <button 
       onClick={agregarCliente} 
@@ -341,8 +338,8 @@ function App() {
       {mostrarTodosClientes? "Deudores":"Todos"}
     </button>
   </div>
-        {/* --- LISTA DE CLIENTES (GRID) --- */}
   <div className="max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+    
     {listaClientes
         .filter((c) =>{
           if(mostrarTodosClientes===true){
@@ -356,7 +353,7 @@ function App() {
           <ClienteCard 
             key={c.id}
             cliente={c}
-            alEliminar={eliminarCliente}
+            alEliminar={() =>setClienteABorrar(c)}
             alModificarSaldo={modificarSalario}
             mostrarDetalleCliente = {mostrarDetalleCliente}
             alEditar={abrirEdicion}
@@ -364,24 +361,21 @@ function App() {
         ))
     }
 
-    {clienteSeleccionado && (
-        <HistorialModal 
-            cliente={clienteSeleccionado} 
-            cerrar={() => setClienteSeleccionado(null)} 
-        />
-    )}
+      {clienteSeleccionado && (
+          <HistorialModal 
+              cliente={clienteSeleccionado} 
+              cerrar={() => setClienteSeleccionado(null)} 
+          />
+      )}
 
-    {/* EL PATIO DE ATRÁS: Acá pegamos el Modal condicional */}
       {clienteModificado && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-slate-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-700">
             <h2 className="text-2xl font-bold text-white mb-6">Editar Cliente</h2>
             
-            {/* Acá después vamos a armar los inputs bien */}
             <p className="text-slate-300 mb-4">
               Estás editando a: <span className="font-bold text-blue-400">{clienteModificado.nombre}</span>
             </p>
-            {/* INPUT DE NOMBRE */}
             <div className="mb-4">
               <label className="block text-slate-400 text-sm font-bold mb-2">Nombre</label>
               <input
@@ -392,7 +386,6 @@ function App() {
               />
             </div>
 
-            {/* INPUT DE TELÉFONO */}
             <div className="mb-4">
               <label className="block text-slate-400 text-sm font-bold mb-2">Teléfono</label>
               <input
@@ -404,7 +397,6 @@ function App() {
             </div>
 
             <div className="flex justify-end gap-4 mt-6">
-              {/* Este botón vuelve el estado a null, haciendo que la ventana desaparezca mágicamente */}
               <button 
                 onClick={() => setClienteModificado(null)}
                 className="px-4 py-2 text-slate-300 hover:bg-slate-700 rounded-lg transition"
@@ -421,7 +413,43 @@ function App() {
         </div>
       )}
 
+      {clienteABorrar && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 p-8 rounded-2xl shadow-2xl border border-red-900/50 w-full max-w-sm text-center">
+            
+            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-500/10 mb-6">
+              <span className="text-3xl">⚠️</span>
+            </div>
+
+            <h2 className="text-xl font-bold text-white mb-2">¿Estás seguro?</h2>
+            <p className="text-slate-400 mb-6">
+              Vas a eliminar a <span className="font-bold text-red-400">{clienteABorrar.nombre}</span>. Esta acción no se puede deshacer y borrará todo su historial.
+            </p>
+
+            <div className="flex justify-center gap-4 mt-6">
+              <button 
+                onClick={() => setClienteABorrar(null)}
+                className="px-5 py-2.5 text-slate-300 font-semibold hover:bg-slate-800 rounded-xl transition"
+              >
+                Cancelar
+              </button>
+              
+              <button 
+                onClick={() => {
+                  eliminarCliente(clienteABorrar.id);
+                  setClienteABorrar(null);
+                }}
+                className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition shadow-lg shadow-red-600/20"
+              >
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
   </div>
+</div>
     </>
   )
 }
