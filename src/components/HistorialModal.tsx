@@ -5,6 +5,8 @@ interface Movimiento {
     monto: number | string;
     descripcion: string;
     tipo: string;
+    saldoAntes: number;
+    saldoDespues: number;
 }
 
 interface ClienteConDetalle {
@@ -45,8 +47,10 @@ export const HistorialModal = ({ cliente, cerrar }: Props) => {
                         <thead className="bg-slate-50 sticky top-0 shadow-sm">
                             <tr>
                                 <th className="p-4 text-xs font-bold text-slate-500 uppercase">Fecha</th>
-                                <th className="p-4 text-xs font-bold text-slate-500 uppercase">Descripción</th>
+                                <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Saldo Ant.</th>
                                 <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Monto</th>
+                                <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Saldo Act.</th>
+                                <th className="p-4 text-xs font-bold text-slate-500 uppercase">Descripción</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -58,12 +62,18 @@ export const HistorialModal = ({ cliente, cerrar }: Props) => {
                                             {new Date(mov.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} hs
                                         </span>
                                     </td>
+                                    <td className="p-4 text-right text-sm text-slate-500 font-medium">
+                                        ${Number(mov.saldoAntes).toLocaleString()}
+                                    </td>
+                                    <td className={`p-4 text-right font-bold ${Number(mov.monto) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                        {Number(mov.monto) > 0 ? '+' : ''}${Number(mov.monto).toLocaleString()}
+                                    </td>
+                                    <td className="p-4 text-right text-sm text-slate-800 font-bold">
+                                        ${Number(mov.saldoDespues).toLocaleString()}
+                                    </td>
                                     <td className="p-4">
                                         <span className="font-medium text-slate-800 block">{mov.descripcion}</span>
                                         <span className="text-xs text-slate-400">{mov.tipo}</span>
-                                    </td>
-                                    <td className={`p-4 text-right font-bold ${Number(mov.monto) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                        {Number(mov.monto) > 0 ? '+' : ''}${mov.monto}
                                     </td>
                                 </tr>
                             ))}

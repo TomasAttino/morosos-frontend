@@ -19,6 +19,8 @@ interface Movimiento {
     monto: number;
     descripcion: string;
     tipo: string;
+    saldoAntes: number;
+    saldoDespues: number;
 }
 
 interface ClienteConDetalle extends Cliente {
@@ -33,6 +35,8 @@ function App() {
 
   const[nombreInput, setNombreInput] = useState<string> ("")
 
+  const [busquedaInput, setBusquedaInput] = useState<string>("")
+
   const [token, setToken] = useState<string | null>(localStorage.getItem("tokenVIP"))
 
   const [mostrarTodosClientes,setMostrarTodosClientes] = useState<boolean>(false)
@@ -45,14 +49,22 @@ function App() {
     return total  + Number(cliente.saldo)
   }, 0 )
 
+  const ordenarPorSaldo = () => {
+    const listaOrdenada = [...listaClientes].sort((a, b) => Number(b.saldo) - Number(a.saldo));
+    setListaClientes(listaOrdenada);
+    toast.success("Lista ordenada por saldo mayor");
+  };
+
+
   useEffect(()=>{
 
     if(!token) return;
 
     const cargarLista = async ()=>{
 
+    const url= import.meta.env.VITE_API_URL    
     try{
-      const respuesta= await fetch("https://api-morosos.onrender.com/api/clientes" ,{
+      const respuesta= await fetch(`${url}/api/clientes` ,{
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -85,7 +97,8 @@ function App() {
   const agregarCliente = async () =>{
 
     if (!nombreInput) return;
-    const url= "https://api-morosos.onrender.com/api/clientes"
+    const urlBase= import.meta.env.VITE_API_URL
+    const url= `${urlBase}/api/clientes`
 
     const pedido= {
       method:"POST",
@@ -119,7 +132,8 @@ function App() {
 
   const eliminarCliente= async (id : number) =>{
 
-    const url= "https://api-morosos.onrender.com/api/clientes"
+    const urlBase= import.meta.env.VITE_API_URL
+    const url= `${urlBase}/api/clientes`
 
     const paquete = {
       method: "DELETE",
@@ -156,7 +170,8 @@ function App() {
 
   const modificarSalario= async (id :number, monto : number) =>{
      
-    const url= `https://api-morosos.onrender.com/api/clientes/${id}`
+    const urlBase = import.meta.env.VITE_API_URL
+    const url= `${urlBase}/api/clientes/${id}`
 
     const paquete={
       method: "PUT",
@@ -175,14 +190,26 @@ function App() {
 
       if(respuesta.ok){
 
-        const clienteActualizadoJson= await respuesta.json();
+        const clienteActualizadoJson = await respuesta.json();
 
-        toast.success(`${clienteActualizadoJson.nombre} actualizo su monto a ${clienteActualizadoJson.saldo}`)
-        // codigo para recargar todos los clientes iguales menos este ultimo modificado
+        toast.success(`${clienteActualizadoJson.nombre}: ${clienteActualizadoJson.mensajeWA}`);
+        
+        if (clienteActualizadoJson.waUrl) {
+          // Opcional: preguntar si quiere enviar el mensaje o simplemente dar un link
+          toast.info("Click para enviar por WhatsApp", {
+            action: {
+              label: "Enviar",
+              onClick: () => window.open(clienteActualizadoJson.waUrl, '_blank')
+            },
+            duration: 10000
+          });
+        }
 
         setListaClientes((prev) => prev.map((cliente) =>{
 
           if(cliente.id === id){
+            // Conservamos las propiedades extra del backend si son necesarias, 
+            // pero el estado de la lista solo necesita los datos del cliente.
             return clienteActualizadoJson;
           }
           else{
@@ -198,7 +225,8 @@ function App() {
 
   const mostrarDetalleCliente = async (id:number) =>{
 
-    const url = `https://api-morosos.onrender.com/api/clientes/${id}`
+    const urlBase = import.meta.env.VITE_API_URL
+    const url = `${urlBase}/api/clientes/${id}`
 
     try{
       const respuesta = await fetch(url ,
@@ -232,7 +260,8 @@ function App() {
 
     if (!clienteModificado) return;
 
-    const url = `https://api-morosos.onrender.com/api/clientes/editar`;
+    const urlBase = import.meta.env.VITE_API_URL
+    const url = `${urlBase}/api/clientes/editar`;
 
     const paquete = {
       method: "PUT",
@@ -318,37 +347,56 @@ function App() {
     </div>
   </div>
   <div className="max-w-xl mx-auto mb-10 flex gap-4">
-    <input 
-      type="text"
-      value={nombreInput}
-      onChange={(e) => setNombreInput(e.target.value)}
-      placeholder='Nombre del nuevo deudor...' 
-      className="text-white w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
-    />
-    <button 
-      onClick={agregarCliente} 
-      className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg shadow-slate-900/20 active:scale-95"
-    >
-      Agregar
-    </button>
-    <button 
-      onClick={() => mostrarTodosClientes?setMostrarTodosClientes(false) : setMostrarTodosClientes(true)} 
-      className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg shadow-slate-900/20 active:scale-95"
-    >
-      {mostrarTodosClientes? "Deudores":"Todos"}
-    </button>
+    <div className="flex-1 flex flex-col gap-2">
+      <input 
+        type="text"
+        value={nombreInput}
+        onChange={(e) => setNombreInput(e.target.value)}
+        placeholder='Nombre del nuevo deudor...' 
+        className="text-white w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
+      />
+      <input 
+        type="text"
+        value={busquedaInput}
+        onChange={(e) => setBusquedaInput(e.target.value)}
+        placeholder='🔍 Buscar cliente por nombre...' 
+        className="text-white w-full px-4 py-2 rounded-lg border border-slate-700 bg-slate-900 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm text-sm"
+      />
+    </div>
+    <div className="flex flex-col gap-2">
+      <button 
+        onClick={agregarCliente} 
+        className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg shadow-slate-900/20 active:scale-95 whitespace-nowrap"
+      >
+        Agregar
+      </button>
+      <div className="flex gap-2">
+        <button 
+          onClick={() => mostrarTodosClientes?setMostrarTodosClientes(false) : setMostrarTodosClientes(true)} 
+          className="flex-1 bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-slate-700 transition active:scale-95"
+        >
+          {mostrarTodosClientes? "Deudores":"Todos"}
+        </button>
+        <button 
+          onClick={ordenarPorSaldo} 
+          className="flex-1 bg-blue-900 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-blue-800 transition active:scale-95"
+          title="Ordenar por mayor deuda"
+        >
+          ↑ Saldo
+        </button>
+      </div>
+    </div>
   </div>
+
+
   <div className="max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-6">
     
     {listaClientes
         .filter((c) =>{
-          if(mostrarTodosClientes===true){
-            return true
-          }else{
-            return Number(c.saldo) > 0 
-          }
+          const cumpleFiltroDeuda = mostrarTodosClientes === true || Number(c.saldo) > 0;
+          const cumpleBusqueda = c.nombre.toLowerCase().includes(busquedaInput.toLowerCase());
+          return cumpleFiltroDeuda && cumpleBusqueda;
         })
-        .sort((a, b) => Number(b.saldo) - Number(a.saldo))
         .map((c) => (
           <ClienteCard 
             key={c.id}
